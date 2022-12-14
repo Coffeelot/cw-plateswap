@@ -40,12 +40,13 @@ It uses qb-phone for the police alert by default, if you want to change it then 
 ## Being able to park or modify cars with fake plates
 You'll have to figure this out yourself. Somewhere in the scripts, wherever there's a plate check that compares to the database you'll need to use the exports `isFakePlate` to check the plates and then `getRealPlateFromFakePlate` to get the real plate you want to modify. 
 
-Example use:
+Example use: Let's say you have a script where it needs to check the car in the database. It obviously uses plate, but your plate is fake! Naughty Naughty!
+In the code the plate of the car is `vehiclePlate`. At first this is a fake plate.
 ```
 local isFakePlate = exports['cw-plateswap']:isFakePlate(vehiclePlate)
 local realPlate = nil
 if isFakePlate then
-    realPlate = exports['cw-plateswap']:isFakePlate(getRealPlateFromFakePlate)
+    vehiclePlate = exports['cw-plateswap']:getRealPlateFromFakePlate(vehiclePlate)
 end
 ```
-Now you can use `realPlate` somewhere as the plate to check DB or whatever. Good luck. 
+Now you have replaced `vehiclePlate` with the real value of the plate, and you can now modify it in the database.
