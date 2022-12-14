@@ -2,7 +2,7 @@ fx_version 'cerulean'
 
 game 'gta5'
 author 'Coffeelot and Wuggie'
-description 'Head 2 Head races for QB'
+description 'Plate Swaps for QB'
 
 ui_page 'html/index.html'
 
