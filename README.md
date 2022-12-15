@@ -1,6 +1,8 @@
 # Plate Swaps 🍽
 A QB based script for stealing plates and attaching them to other vehicles. Plates are added to inventory as items. The original plates for player owned vehicles are left untouched in the database, and you can always swap back to original plates from a fakeplate.
 
+It does come with some limitations currently. You can not park your vehicles with a fake plate on without editing your garage script (see last section of readme for examples). Modifying a vehicle will not save changes in database (same thing as garages). The script is also set up to not allow stealing player-plates. Just because this might cause problems with saving in databases etc, a toggle to enable this at your own risk might be introduced.
+
 # Preview 📽
 [![YOUTUBE VIDEO](http://img.youtube.com/vi/m9LxymEF9wI/0.jpg)](https://youtu.be/m9LxymEF9wI)
 
@@ -50,3 +52,6 @@ if isFakePlate then
 end
 ```
 Now you have replaced `vehiclePlate` with the real value of the plate, and you can now modify it in the database.
+
+Example of implementation in qb-garages:
+![example](https://media.discordapp.net/attachments/1052645110254403584/1052694558510690404/image.png)
