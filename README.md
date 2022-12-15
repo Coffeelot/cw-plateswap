@@ -20,8 +20,6 @@ It does come with some limitations currently. You can not park your vehicles wit
 
 # Features 🌟
 - Steal license plates from local cars and apply them to yours
-- Export to see if cars are using a fake plate or not: `isFakePlate`
-- Export to get the real plate of a car with a fake plate: `getRealPlateFromFakePlate`
 # Planned features 🤔
 - Legal plate changes
 
@@ -42,16 +40,17 @@ It uses qb-phone for the police alert by default, if you want to change it then 
 ## Being able to park or modify cars with fake plates
 You'll have to figure this out yourself. Somewhere in the scripts, wherever there's a plate check that compares to the database you'll need to use the exports `isFakePlate` to check the plates and then `getRealPlateFromFakePlate` to get the real plate you want to modify. 
 
-Example use: Let's say you have a script where it needs to check the car in the database. It obviously uses plate, but your plate is fake! Naughty Naughty!
-In the code the plate of the car is `vehiclePlate`. At first this is a fake plate.
+Example use: Let's say you have a script where it needs to check the car in the database. It obviously uses plate to map to something in the db, but your plate is fake! Naughty Naughty!
+In the code the plate of the car is `plate` and the vehicle entity is `veh`.
 ```
-local isFakePlate = exports['cw-plateswap']:isFakePlate(vehiclePlate)
-local realPlate = nil
-if isFakePlate then
-    vehiclePlate = exports['cw-plateswap']:getRealPlateFromFakePlate(vehiclePlate)
-end
+exports['cw-plateswap']:resetPlateIfFake(plate, veh)
 ```
-Now you have replaced `vehiclePlate` with the real value of the plate, and you can now modify it in the database.
+After this is used, your car will have it's real plate, but keep the fake plate in the db.
 
-Example of implementation in qb-garages:
-![example](https://media.discordapp.net/attachments/1052645110254403584/1052694558510690404/image.png)
+Whenever you want to put the fake plate back on you can call this:
+```
+exports['cw-plateswap']:applyFakePlateIfExists(plate, veh)
+```
+
+Example of implementation in qb-garages (gotta honk twice to park lol):
+![example](https://media.discordapp.net/attachments/1038602226282807446/1053002560597934210/image.png)
