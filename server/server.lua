@@ -74,10 +74,25 @@ end)
 QBCore.Functions.CreateCallback('cw-plateswap:server:getRealPlateFromFakePlate', function(source, cb, fakePlate)
    local realPlateFromDb = MySQL.Sync.fetchAll('SELECT plate FROM player_vehicles WHERE fakeplate = ?', {fakePlate})
    if useDebug then
-      print(realPlateFromDb)
-      print(dump(realPlateFromDb)) 
+      print('real plate:',dump(realPlateFromDb)) 
    end
-   cb(realPlateFromDb)
+   if realPlateFromDb[1] then
+      cb(realPlateFromDb[1].plate)
+   else
+      cb(false)
+   end
+end)
+
+QBCore.Functions.CreateCallback('cw-plateswap:server:getFakePlateFromRealPlate', function(source, cb, plate)
+   local fakePlateFromDb = MySQL.Sync.fetchAll('SELECT fakeplate FROM player_vehicles WHERE plate = ?', {plate})
+   if useDebug then
+      print('fake plate', dump(fakePlateFromDb)) 
+   end
+   if fakePlateFromDb[1] then
+      cb(fakePlateFromDb[1].fakeplate)
+   else
+      cb(false)
+   end
 end)  
 
 QBCore.Functions.CreateCallback('cw-plateswap:server:createItem', function(source, cb, fakePlate)

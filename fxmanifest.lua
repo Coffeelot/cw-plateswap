@@ -35,6 +35,6 @@ dependency{
 }
 
 exports {
-    'isFakePlate',
-    'getRealPlateFromFakePlate'
+    'resetPlateIfFake',
+    'applyFakePlateIfExists',
 }

@@ -14,16 +14,20 @@ function dump(o)
    end
 end
 
-local function isFakePlate(fakePlate)
-    QBCore.Functions.TriggerCallback('cw-plateswap:server:isFakePlate', function(isFake)
-        return isFake
+function resetPlateIfFake(fakePlate, veh)
+    QBCore.Functions.TriggerCallback('cw-plateswap:server:getRealPlateFromFakePlate', function(realPlate)
+        if realPlate then
+            SetVehicleNumberPlateText(veh, realPlate)
+        end
     end, fakePlate)
 end
 
-local function getRealPlateFromFakePlate(fakePlate)
-    QBCore.Functions.TriggerCallback('cw-plateswap:server:getRealPlateFromFakePlate', function(realPlate)
-        return realPlate
-    end, fakePlate)
+function applyFakePlateIfExists(realPlate, veh)
+    QBCore.Functions.TriggerCallback('cw-plateswap:server:getFakePlateFromRealPlate', function(fakePlate)
+        if fakePlate then
+            SetVehicleNumberPlateText(veh, fakePlate)
+        end
+    end, realPlate)
 end
 
 local function callCops()
@@ -58,6 +62,7 @@ local function setPlate(fakePlate, vehicle)
             end
         end
     end, captializedFakePlate, plate)
+
 end
 
 local function removeFakePlate(vehicle)
@@ -74,7 +79,6 @@ local function removeFakePlate(vehicle)
 end
 
 local function takePlate(entity)
-    print(dump(entity))
     local plate = QBCore.Functions.GetPlate(entity)
     if plate == '' then
         if useDebug then
@@ -114,29 +118,35 @@ local function takePlate(entity)
 end
 
 local function applyPlate(entity)
-    TriggerEvent('animations:client:EmoteCommandStart', {"mechanic3"})
-    QBCore.Functions.Progressbar("applying_plate", Lang:t('info.applying'), Config.Settings.AddTime, false, true, {
-        disableMovement = true,
-        disableCarMovement = true,
-        disableMouse = false,
-        disableCombat = true,
-    }, {}, {}, {}, function()
-        QBCore.Functions.TriggerCallback('cw-plateswap:server:getFakePlateId', function(fakePlate)
-            if fakePlate then
-                if useDebug then
-                    print('item found', fakePlate)
-                end
-                setPlate(fakePlate, entity)
-            else
-                print('Nah')
-            end
-        end)
-        TriggerEvent('animations:client:EmoteCommandStart', {"c"})
-    end, function() -- Cancel
-        TriggerEvent('animations:client:EmoteCommandStart', {"c"})
-        QBCore.Functions.Notify(Lang:t('error.canceled'), "error")
-    end)
-
+    local plate = QBCore.Functions.GetPlate(entity)
+    QBCore.Functions.TriggerCallback('cw-plateswap:server:isFakePlate', function(isFake)
+        if not isFake then
+            TriggerEvent('animations:client:EmoteCommandStart', {"mechanic3"})
+            QBCore.Functions.Progressbar("applying_plate", Lang:t('info.applying'), Config.Settings.AddTime, false, true, {
+                disableMovement = true,
+                disableCarMovement = true,
+                disableMouse = false,
+                disableCombat = true,
+            }, {}, {}, {}, function()
+                QBCore.Functions.TriggerCallback('cw-plateswap:server:getFakePlateId', function(fakePlate)
+                    if fakePlate then
+                        if useDebug then
+                            print('item found', fakePlate)
+                        end
+                        setPlate(fakePlate, entity)
+                    else
+                        print('Nah')
+                    end
+                end)
+                TriggerEvent('animations:client:EmoteCommandStart', {"c"})
+            end, function() -- Cancel
+                TriggerEvent('animations:client:EmoteCommandStart', {"c"})
+                QBCore.Functions.Notify(Lang:t('error.canceled'), "error")
+            end)
+        else
+            QBCore.Functions.Notify(Lang:t('error.remove_first'), "error")
+        end
+    end, plate)
 end
 
 RegisterNetEvent('cw-plateswap:client:setFakePlate', function(fakePlate)
@@ -144,7 +154,6 @@ RegisterNetEvent('cw-plateswap:client:setFakePlate', function(fakePlate)
     print('fakeplate', captializedFakePlate)
     local player = PlayerPedId()
     local vehicle = GetVehiclePedIsIn(player, false)
-    local plate = QBCore.Functions.GetPlate(vehicle)
     QBCore.Functions.TriggerCallback('cw-plateswap:server:setFakePlate', function(plateWasAvailable)
         if plateWasAvailable then
             SetVehicleNumberPlateText(vehicle, captializedFakePlate)
