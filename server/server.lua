@@ -83,6 +83,9 @@ QBCore.Functions.CreateCallback('cw-plateswap:server:getRealPlateFromFakePlate',
    end
    if realPlateFromDb[1] then
       cb(realPlateFromDb[1].plate)
+      if Config.Inventory == 'ox' then
+         exports.ox_inventory:UpdateVehicle(fakePlate, realPlateFromDb[1].plate)
+      end
    else
       cb(false)
    end
@@ -142,6 +145,9 @@ QBCore.Functions.CreateCallback('cw-plateswap:server:removeFakePlate', function(
    end
    MySQL.Sync.execute('UPDATE player_vehicles SET fakeplate = NULL WHERE fakeplate = ?', {fakePlate} )
    givePlate(source, fakePlate)
+   if Config.Inventory == 'ox' then
+      exports.ox_inventory:UpdateVehicle(fakePlate, results[1].plate)
+   end
    cb(results[1].plate)
 end)
 
@@ -166,6 +172,7 @@ QBCore.Functions.CreateCallback('cw-plateswap:server:setFakePlate', function(sou
          TriggerClientEvent('inventory:client:ItemBox', source, getQBItem(item), "remove")
       elseif Config.Inventory == 'ox' then
          exports.ox_inventory:RemoveItem(source, item,1)
+         exports.ox_inventory:UpdateVehicle(plate, fakePlate)
       end
 
       MySQL.Sync.execute('UPDATE player_vehicles SET fakeplate = ? WHERE plate = ?', {fakePlate, plate} )
