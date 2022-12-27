@@ -1,6 +1,7 @@
 Config = {}
 Config.Debug = false
 Config.LicensePlateItem = 'licenseplate'
+Config.Inventory = 'qb'
 Config.InteractionItem = nil
 
 Config.Settings = {

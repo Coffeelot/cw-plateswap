@@ -51,8 +51,12 @@ local function givePlate(source, plateNumber)
    local Player = QBCore.Functions.GetPlayer(source)
    local item = Config.LicensePlateItem
    local info = { plate = plateNumber }
-   Player.Functions.AddItem(item, 1, nil, info)
-   TriggerClientEvent('inventory:client:ItemBox', source, getQBItem(item), "add")
+   if Config.Inventory == 'qb' then
+      Player.Functions.AddItem(item, 1, nil, info)
+       TriggerClientEvent('inventory:client:ItemBox', source, getQBItem(item), "add")
+   elseif Config.Inventory == 'ox' then
+      exports.ox_inventory:AddItem(source, item, 1, {plate = plateNumber})
+   end
 end
 
 -- NEEDS TESTING
@@ -64,6 +68,7 @@ QBCore.Functions.CreateCallback('cw-plateswap:server:isFakePlate', function(sour
       cb(true)
    else
       if useDebug then
+         print(fakePlate)
          print('Was not a fake plate')
       end
       cb(false)
@@ -74,7 +79,7 @@ end)
 QBCore.Functions.CreateCallback('cw-plateswap:server:getRealPlateFromFakePlate', function(source, cb, fakePlate)
    local realPlateFromDb = MySQL.Sync.fetchAll('SELECT plate FROM player_vehicles WHERE fakeplate = ?', {fakePlate})
    if useDebug then
-      print('real plate:',dump(realPlateFromDb)) 
+      print('real plate:',dump(realPlateFromDb))
    end
    if realPlateFromDb[1] then
       cb(realPlateFromDb[1].plate)
@@ -86,14 +91,14 @@ end)
 QBCore.Functions.CreateCallback('cw-plateswap:server:getFakePlateFromRealPlate', function(source, cb, plate)
    local fakePlateFromDb = MySQL.Sync.fetchAll('SELECT fakeplate FROM player_vehicles WHERE plate = ?', {plate})
    if useDebug then
-      print('fake plate', dump(fakePlateFromDb)) 
+      print('fake plate', dump(fakePlateFromDb))
    end
    if fakePlateFromDb[1] then
       cb(fakePlateFromDb[1].fakeplate)
    else
       cb(false)
    end
-end)  
+end)
 
 QBCore.Functions.CreateCallback('cw-plateswap:server:createItem', function(source, cb, fakePlate)
    if useDebug then
@@ -117,8 +122,12 @@ QBCore.Functions.CreateCallback('cw-plateswap:server:createItem', function(sourc
       local item = Config.LicensePlateItem
       local info = { plate = fakePlate }
    	local Player = QBCore.Functions.GetPlayer(source)
-      Player.Functions.AddItem(item, 1, nil, info)
-      TriggerClientEvent('inventory:client:ItemBox', source, getQBItem(item), "add")
+      if Config.Inventory == 'qb' then
+         Player.Functions.AddItem(item, 1, nil, info)
+         TriggerClientEvent('inventory:client:ItemBox', source, getQBItem(item), "add")
+      elseif Config.Inventory == 'ox' then
+         exports.ox_inventory:AddItem(source, item, 1, info)
+      end
       cb('OK')
    end
 end)
@@ -151,8 +160,14 @@ QBCore.Functions.CreateCallback('cw-plateswap:server:setFakePlate', function(sou
       end
       local item = Config.LicensePlateItem
       local Player = QBCore.Functions.GetPlayer(source)
-      Player.Functions.RemoveItem(item , 1)
-      TriggerClientEvent('inventory:client:ItemBox', source, getQBItem(item), "remove")
+
+      if Config.Inventory == 'qb' then
+         Player.Functions.RemoveItem(item , 1)
+         TriggerClientEvent('inventory:client:ItemBox', source, getQBItem(item), "remove")
+      elseif Config.Inventory == 'ox' then
+         exports.ox_inventory:RemoveItem(source, item,1)
+      end
+
       MySQL.Sync.execute('UPDATE player_vehicles SET fakeplate = ? WHERE plate = ?', {fakePlate, plate} )
       cb(true)
    end
@@ -166,10 +181,18 @@ QBCore.Functions.CreateCallback('cw-plateswap:server:getFakePlateId', function(s
    local licenseplates = Player.Functions.GetItemsByName(Config.LicensePlateItem)
    if licenseplates then
       print(dump(licenseplates))
-      if licenseplates[1].info then
-         cb(licenseplates[1].info.plate)
-      else
-         print('getFakePlateId: plate has no info')
+      if Config.Inventory == 'qb' then
+         if licenseplates[1].info then
+            cb(licenseplates[1].info.plate)
+         else
+            print('getFakePlateId: plate has no info')
+         end
+      elseif Config.Inventory == 'ox' then
+         if licenseplates[1].metadata then
+            cb(licenseplates[1].metadata.plate)
+         else
+            print('getFakePlateId: plate has no info')
+         end
       end
    else
       if useDebug then

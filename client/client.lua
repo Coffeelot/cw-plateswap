@@ -54,7 +54,16 @@ local function setPlate(fakePlate, vehicle)
             SetVehicleNumberPlateText(vehicle, captializedFakePlate)
             TriggerServerEvent('cw-plateswap:server:setFakePlate', plate, captializedFakePlate)
             Wait(200)
-            TriggerEvent('qb-vehiclekeys:client:AddKeys', fakePlate:upper())
+            QBCore.Functions.TriggerCallback('qb-vehiclekeys:server:GetVehicleKeys', function(keysList)
+                
+                if keysList[plate] then
+                    TriggerEvent('qb-vehiclekeys:client:AddKeys', fakePlate:upper())
+                else
+                    if useDebug then
+                        print('you didnt have keys to this car')
+                    end
+                end 
+            end)
         else
             if useDebug then
                 QBCore.Functions.Notify(Lang:t('error.plate_too_hot'), "error")
@@ -80,12 +89,14 @@ end
 
 local function takePlate(entity)
     local plate = QBCore.Functions.GetPlate(entity)
+    print("plate is", plate)
     if plate == '' then
         if useDebug then
             print('This plate doesnt exist')
         end
+        QBCore.Functions.Notify('This Vehicle Doesnt Have A Plate', 'error', 4000)
+    return end
 
-    end
     if useDebug then
         print('stealing plate', plate)
     end
@@ -115,6 +126,10 @@ local function takePlate(entity)
         TriggerEvent('animations:client:EmoteCommandStart', {"c"})
         QBCore.Functions.Notify(Lang:t('error.canceled'), "error")
     end)
+end
+
+if Config.Inventory == 'ox' then
+    exports.ox_inventory:displayMetadata("plate", "Plate Number")
 end
 
 local function applyPlate(entity)
@@ -188,32 +203,39 @@ CreateThread(function()
           'boot',
         }
     local options = {
-        { 
-            type = "client", 
+        {
+            type = "client",
             icon = 'fas fa-screwdriver',
             label = 'Take plate',
             -- item = Config.InteractionItem,
-            action = function(entity) 
+            action = function(entity)
                 takePlate(entity)
             end,
-            canInteract = function(entity, distance, data) 
+            canInteract = function(entity, distance, data)
                 return true
             end,
         },
-        { 
-            type = "client", 
-            icon = 'fas fa-screwdriver', 
-            label = 'Put plate', 
+        {
+            type = "client",
+            icon = 'fas fa-screwdriver',
+            label = 'Put plate',
             item = Config.LicensePlateItem,
-            action = function(entity) 
+            action = function(entity)
             applyPlate(entity)
             end,
             canInteract = function(entity, distance, data)
                 if Config.InteractionItem then
-                    local hasItem = QBCore.Functions.HasItem(Config.InteractionItem)
-                    if hasItem then 
-                        return true
+                    local hasItem = false
+
+                    if Config.Inventory == 'qb' then
+                        hasItem = QBCore.Functions.HasItem(Config.InteractionItem)
+                        if hasItem then return true end
+                    else
+                        hasItem = exports.ox_inventory:Search('count', Config.InteractionItem)
+                        if hasItem >= 1 then return true
+                        end
                     end
+
                     return false
                 else
                     return true
@@ -228,6 +250,6 @@ CreateThread(function()
 end)
 
 RegisterNetEvent('cw-plateswap:client:toggleDebug', function(debug)
-   print('Setting debug to',debug)
+   print('Setting debug to', debug)
    useDebug = debug
 end)
