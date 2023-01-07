@@ -37,6 +37,16 @@ It does come with some limitations currently. You can not park your vehicles wit
 
 It uses qb-phone for the police alert by default, if you want to change it then you can find the Event trigger at the bottom of `server.lua`
 
+# Add to qb-core ❗
+Items to add to qb-core>shared>items.lua if you want to used the included item
+
+```
+-- CW paintjobs
+["licenseplate"] =          {["name"] = "licenseplate",         ["label"] = "License Plate",                  ["weight"] = 1, ["type"] = "item", ["image"] = "licenseplate.png", ["unique"] = true, ["useable"] = true, ['shouldClose'] = false, ["combinable"] = nil, ["description"] = "A license plate for a vehicle"},
+
+
+```
+
 ## Being able to park or modify cars with fake plates
 You'll have to figure this out yourself. Somewhere in the scripts, wherever there's a plate check that compares to the database you'll need to use the exports `isFakePlate` to check the plates and then `getRealPlateFromFakePlate` to get the real plate you want to modify. 
 
