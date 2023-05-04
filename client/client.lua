@@ -55,16 +55,16 @@ local function setPlate(fakePlate, vehicle)
             TriggerServerEvent('cw-plateswap:server:setFakePlate', plate, captializedFakePlate)
             Wait(200)
             QBCore.Functions.TriggerCallback('qb-vehiclekeys:server:GetVehicleKeys', function(keysList)
-                
                 if keysList[plate] then
                     TriggerEvent('qb-vehiclekeys:client:AddKeys', fakePlate:upper())
                 else
                     if useDebug then
                         print('you didnt have keys to this car')
                     end
-                end 
+                end
             end)
         else
+            QBCore.Functions.Notify('You need to have the keys for the vehicle')
             if useDebug then
                 QBCore.Functions.Notify(Lang:t('error.plate_too_hot'), "error")
                 print('Plate was used')
@@ -80,11 +80,20 @@ local function removeFakePlate(vehicle)
     end
     local fakePlate = QBCore.Functions.GetPlate(vehicle)
     if useDebug then
-        print('fake plate', fakePlate)
+        print('fake plate trying to create', fakePlate)
     end
-    QBCore.Functions.TriggerCallback('cw-plateswap:server:removeFakePlate', function(ogPlate)
-        SetVehicleNumberPlateText(vehicle, ogPlate)
-    end, fakePlate)
+    QBCore.Functions.TriggerCallback('qb-vehiclekeys:server:GetVehicleKeys', function(keysList)
+        if keysList[fakePlate] then
+            QBCore.Functions.TriggerCallback('cw-plateswap:server:removeFakePlate', function(ogPlate)
+                SetVehicleNumberPlateText(vehicle, ogPlate)
+            end, fakePlate)
+        else
+            QBCore.Functions.Notify('You need to have the keys for the vehicle')
+            if useDebug then
+                print('you didnt have keys to this car')
+            end
+        end
+    end)
 end
 
 local function takePlate(entity)
@@ -100,31 +109,40 @@ local function takePlate(entity)
     if useDebug then
         print('stealing plate', plate)
     end
-    TriggerEvent('animations:client:EmoteCommandStart', {"mechanic3"})
-    QBCore.Functions.Progressbar("removing_plate", Lang:t('info.removing'), Config.Settings.RemoveTime, false, true, {
-        disableMovement = true,
-        disableCarMovement = true,
-        disableMouse = false,
-        disableCombat = true,
-    }, {}, {}, {}, function()
-        QBCore.Functions.TriggerCallback('cw-plateswap:server:createItem', function(plateWasAvailable)
-            if plateWasAvailable == 'OK' then
-                local chance = math.random(1,100)
-                if chance < Config.Settings.PoliceCallChance then
-                    callCops()
-                end
-                if useDebug then
-                    print('Item given')
-                end
-                SetVehicleNumberPlateText(entity, '')
-            elseif plateWasAvailable == 'EXISTS' then
-                removeFakePlate(entity)
+    QBCore.Functions.TriggerCallback('qb-vehiclekeys:server:GetVehicleKeys', function(keysList)
+        if keysList[plate] then
+            TriggerEvent('animations:client:EmoteCommandStart', {"mechanic3"})
+            QBCore.Functions.Progressbar("removing_plate", Lang:t('info.removing'), Config.Settings.RemoveTime, false, true, {
+                disableMovement = true,
+                disableCarMovement = true,
+                disableMouse = false,
+                disableCombat = true,
+            }, {}, {}, {}, function()
+                QBCore.Functions.TriggerCallback('cw-plateswap:server:createItem', function(plateWasAvailable)
+                    if plateWasAvailable == 'OK' then
+                        local chance = math.random(1,100)
+                        if chance < Config.Settings.PoliceCallChance then
+                            callCops()
+                        end
+                        if useDebug then
+                            print('Item given')
+                        end
+                        SetVehicleNumberPlateText(entity, '')
+                    elseif plateWasAvailable == 'EXISTS' then
+                        removeFakePlate(entity)
+                    end
+                end, plate)
+                TriggerEvent('animations:client:EmoteCommandStart', {"c"})
+            end, function() -- Cancel
+                TriggerEvent('animations:client:EmoteCommandStart', {"c"})
+                QBCore.Functions.Notify(Lang:t('error.canceled'), "error")
+            end)
+        else
+            QBCore.Functions.Notify('You need to have the keys for the vehicle')
+            if useDebug then
+                print('you didnt have keys to this car')
             end
-        end, plate)
-        TriggerEvent('animations:client:EmoteCommandStart', {"c"})
-    end, function() -- Cancel
-        TriggerEvent('animations:client:EmoteCommandStart', {"c"})
-        QBCore.Functions.Notify(Lang:t('error.canceled'), "error")
+        end
     end)
 end
 
@@ -201,18 +219,33 @@ end)
 CreateThread(function()
     local bones = {
           'boot',
+          'bonnet',
+          'numberplate'
         }
     local options = {
         {
             type = "client",
             icon = 'fas fa-screwdriver',
             label = 'Take plate',
-            -- item = Config.InteractionItem,
             action = function(entity)
                 takePlate(entity)
             end,
             canInteract = function(entity, distance, data)
-                return true
+                if Config.InteractionItem then
+                    local hasItem = false
+
+                    if Config.Inventory == 'qb' then
+                        hasItem = QBCore.Functions.HasItem(Config.InteractionItem)
+                        if hasItem then return true end
+                    else
+                        if exports.ox_inventory:Search('count', Config.InteractionItem) >= 1 then return true
+                        end
+                    end
+
+                    return false
+                else
+                    return true
+                end
             end,
         },
         {
@@ -231,8 +264,7 @@ CreateThread(function()
                         hasItem = QBCore.Functions.HasItem(Config.InteractionItem)
                         if hasItem then return true end
                     else
-                        hasItem = exports.ox_inventory:Search('count', Config.InteractionItem)
-                        if hasItem >= 1 then return true
+                        if exports.ox_inventory:Search('count', Config.InteractionItem) >= 1 then return true
                         end
                     end
 
