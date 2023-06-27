@@ -45,6 +45,7 @@ end
 local function setPlate(fakePlate, vehicle)
     local captializedFakePlate = fakePlate:upper()
     if useDebug then
+        print('in setPlate')
         print('fakeplate', captializedFakePlate)
         print('vehicle', vehicle)
     end
@@ -54,15 +55,7 @@ local function setPlate(fakePlate, vehicle)
             SetVehicleNumberPlateText(vehicle, captializedFakePlate)
             TriggerServerEvent('cw-plateswap:server:setFakePlate', plate, captializedFakePlate)
             Wait(200)
-            QBCore.Functions.TriggerCallback('qb-vehiclekeys:server:GetVehicleKeys', function(keysList)
-                if keysList[plate] then
-                    TriggerEvent('qb-vehiclekeys:client:AddKeys', fakePlate:upper())
-                else
-                    if useDebug then
-                        print('you didnt have keys to this car')
-                    end
-                end
-            end)
+            TriggerEvent('qb-vehiclekeys:client:AddKeys', fakePlate:upper())
         else
             QBCore.Functions.Notify('You need to have the keys for the vehicle')
             if useDebug then
@@ -82,23 +75,14 @@ local function removeFakePlate(vehicle)
     if useDebug then
         print('fake plate trying to create', fakePlate)
     end
-    QBCore.Functions.TriggerCallback('qb-vehiclekeys:server:GetVehicleKeys', function(keysList)
-        if keysList[fakePlate] then
-            QBCore.Functions.TriggerCallback('cw-plateswap:server:removeFakePlate', function(ogPlate)
-                SetVehicleNumberPlateText(vehicle, ogPlate)
-            end, fakePlate)
-        else
-            QBCore.Functions.Notify('You need to have the keys for the vehicle')
-            if useDebug then
-                print('you didnt have keys to this car')
-            end
-        end
-    end)
+    QBCore.Functions.TriggerCallback('cw-plateswap:server:removeFakePlate', function(ogPlate)
+        SetVehicleNumberPlateText(vehicle, ogPlate)
+    end, fakePlate)
+
 end
 
 local function takePlate(entity)
     local plate = QBCore.Functions.GetPlate(entity)
-    print("plate is", plate)
     if plate == '' then
         if useDebug then
             print('This plate doesnt exist')
@@ -109,40 +93,31 @@ local function takePlate(entity)
     if useDebug then
         print('stealing plate', plate)
     end
-    QBCore.Functions.TriggerCallback('qb-vehiclekeys:server:GetVehicleKeys', function(keysList)
-        if keysList[plate] then
-            TriggerEvent('animations:client:EmoteCommandStart', {"mechanic3"})
-            QBCore.Functions.Progressbar("removing_plate", Lang:t('info.removing'), Config.Settings.RemoveTime, false, true, {
-                disableMovement = true,
-                disableCarMovement = true,
-                disableMouse = false,
-                disableCombat = true,
-            }, {}, {}, {}, function()
-                QBCore.Functions.TriggerCallback('cw-plateswap:server:createItem', function(plateWasAvailable)
-                    if plateWasAvailable == 'OK' then
-                        local chance = math.random(1,100)
-                        if chance < Config.Settings.PoliceCallChance then
-                            callCops()
-                        end
-                        if useDebug then
-                            print('Item given')
-                        end
-                        SetVehicleNumberPlateText(entity, '')
-                    elseif plateWasAvailable == 'EXISTS' then
-                        removeFakePlate(entity)
-                    end
-                end, plate)
-                TriggerEvent('animations:client:EmoteCommandStart', {"c"})
-            end, function() -- Cancel
-                TriggerEvent('animations:client:EmoteCommandStart', {"c"})
-                QBCore.Functions.Notify(Lang:t('error.canceled'), "error")
-            end)
-        else
-            QBCore.Functions.Notify('You need to have the keys for the vehicle')
-            if useDebug then
-                print('you didnt have keys to this car')
+    TriggerEvent('animations:client:EmoteCommandStart', {"mechanic4"})
+    QBCore.Functions.Progressbar("removing_plate", Lang:t('info.removing'), Config.Settings.RemoveTime, false, true, {
+        disableMovement = true,
+        disableCarMovement = true,
+        disableMouse = false,
+        disableCombat = true,
+    }, {}, {}, {}, function()
+        QBCore.Functions.TriggerCallback('cw-plateswap:server:createItem', function(plateWasAvailable)
+            if plateWasAvailable == 'OK' then
+                local chance = math.random(1,100)
+                if chance < Config.Settings.PoliceCallChance then
+                    callCops()
+                end
+                if useDebug then
+                    print('Item given')
+                end
+                SetVehicleNumberPlateText(entity, '')
+            elseif plateWasAvailable == 'EXISTS' then
+                removeFakePlate(entity)
             end
-        end
+        end, plate)
+        TriggerEvent('animations:client:EmoteCommandStart', {"c"})
+    end, function() -- Cancel
+        TriggerEvent('animations:client:EmoteCommandStart', {"c"})
+        QBCore.Functions.Notify(Lang:t('error.canceled'), "error")
     end)
 end
 
@@ -151,35 +126,47 @@ if Config.Inventory == 'ox' then
 end
 
 local function applyPlate(entity)
+    if useDebug then
+        print('in applyPlate')
+    end
     local plate = QBCore.Functions.GetPlate(entity)
-    QBCore.Functions.TriggerCallback('cw-plateswap:server:isFakePlate', function(isFake)
-        if not isFake then
-            TriggerEvent('animations:client:EmoteCommandStart', {"mechanic3"})
-            QBCore.Functions.Progressbar("applying_plate", Lang:t('info.applying'), Config.Settings.AddTime, false, true, {
-                disableMovement = true,
-                disableCarMovement = true,
-                disableMouse = false,
-                disableCombat = true,
-            }, {}, {}, {}, function()
-                QBCore.Functions.TriggerCallback('cw-plateswap:server:getFakePlateId', function(fakePlate)
-                    if fakePlate then
-                        if useDebug then
-                            print('item found', fakePlate)
-                        end
-                        setPlate(fakePlate, entity)
-                    else
-                        print('Nah')
-                    end
-                end)
-                TriggerEvent('animations:client:EmoteCommandStart', {"c"})
-            end, function() -- Cancel
-                TriggerEvent('animations:client:EmoteCommandStart', {"c"})
-                QBCore.Functions.Notify(Lang:t('error.canceled'), "error")
-            end)
+    QBCore.Functions.TriggerCallback('qb-vehiclekeys:server:GetVehicleKeys', function(keysList)
+        if keysList[plate] then
+            QBCore.Functions.TriggerCallback('cw-plateswap:server:isFakePlate', function(isFake)
+                if not isFake then
+                    TriggerEvent('animations:client:EmoteCommandStart', {"mechanic4"})
+                    QBCore.Functions.Progressbar("applying_plate", Lang:t('info.applying'), Config.Settings.AddTime, false, true, {
+                        disableMovement = true,
+                        disableCarMovement = true,
+                        disableMouse = false,
+                        disableCombat = true,
+                    }, {}, {}, {}, function()
+                        QBCore.Functions.TriggerCallback('cw-plateswap:server:getFakePlateId', function(fakePlate)
+                            if fakePlate then
+                                if useDebug then
+                                    print('item found', fakePlate)
+                                end
+                                setPlate(fakePlate, entity)
+                            else
+                                print('Nah')
+                            end
+                        end)
+                        TriggerEvent('animations:client:EmoteCommandStart', {"c"})
+                    end, function() -- Cancel
+                        TriggerEvent('animations:client:EmoteCommandStart', {"c"})
+                        QBCore.Functions.Notify(Lang:t('error.canceled'), "error")
+                    end)
+                else
+                    QBCore.Functions.Notify(Lang:t('error.remove_first'), "error")
+                end
+            end, plate)
         else
-            QBCore.Functions.Notify(Lang:t('error.remove_first'), "error")
+            QBCore.Functions.Notify('You need to have the keys for the vehicle')
+            if useDebug then
+                print('you didnt have keys to this car')
+            end
         end
-    end, plate)
+    end)
 end
 
 RegisterNetEvent('cw-plateswap:client:setFakePlate', function(fakePlate)

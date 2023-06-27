@@ -2,8 +2,7 @@ local Translations = {
     error = {
         plate_too_hot = "This plate is too hot!",
         canceled = "Canceled",
-        remove_first = "Remove the existing fake plate first",
-        already_stolen = "There is no plate on this car"
+        remove_first = "Remove the existing fake plate first"
     },
     info = {
         removing = "Removing plate",
